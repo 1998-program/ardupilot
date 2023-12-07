@@ -34,7 +34,7 @@ public:
     // The read() method is the only one needed in each driver. It
     // should return true when the backend has successfully received a
     // valid packet from the GPS.
-    virtual bool read() = 0;
+    virtual bool read() = 0;        //最后的=0并不表示函数返回值为0，它只起形式上的作用，告诉编译系统“这是纯虚函数”。
 
     // Highest status supported by this GPS. 
     // Allows external system to identify type of receiver connected.
@@ -96,6 +96,11 @@ protected:
     void set_uart_timestamp(uint16_t nbytes);
 
     void check_new_itow(uint32_t itow, uint32_t msg_length);
+
+#if GPS_MOVING_BASELINE
+    bool calculate_moving_base_yaw(float reported_heading_deg);
+    bool calculate_moving_base_yaw(AP_GPS::GPS_State &interim_state, const float reported_heading_deg);
+#endif //GPS_MOVING_BASELINE
     
 private:
     // itow from previous message

@@ -898,6 +898,12 @@ bool AP_AHRS_NavEKF::get_relative_position_NE_home(Vector2f &posNE) const
 // write a relative ground position estimate to the origin in meters, North/East order
 
 
+bool AP_AHRS_NavEKF::get_gps_yaw(float & gps_yaw) const{
+    bool gpsyaw_is_valid = EKF2.getgpsyaw(-1,gps_yaw);
+    //hal.serial(1)->printf("yaw%f\n",gps_yaw);
+    return gpsyaw_is_valid;
+}
+
 // write a relative ground position to the origin in meters, Down
 // return true if the estimate is valid
 bool AP_AHRS_NavEKF::get_relative_position_D_origin(float &posD) const

@@ -96,6 +96,33 @@ void AC_Circle::init()
     // set starting angle from vehicle heading
     init_start_angle(true);
 }
+/*
+void AC_Circle::asv_init(const Vector3f& center)
+{
+    // initialise position controller (sets target roll angle, pitch angle and I terms based on vehicle current lean angles)
+    _pos_control.set_desired_accel_xy(0.0f,0.0f);
+    _pos_control.set_desired_velocity_xy(0.0f,0.0f);
+    _pos_control.init_xy_controller();
+
+    // set initial position target to reasonable stopping point
+    _pos_control.set_target_to_stopping_point_xy();
+    _pos_control.set_target_to_stopping_point_z();
+
+    // get stopping point
+
+
+    // set circle center to circle_radius ahead of stopping point
+    _center.x = center.x ;
+    _center.y = center.y;
+    _center.z = center.z;
+
+    // calculate velocities
+    calc_velocities(true);
+
+    // set starting angle from vehicle heading
+    init_start_angle(true);
+}
+*/
 
 /// set_circle_rate - set circle rate in degrees per second
 void AC_Circle::set_rate(float deg_per_sec)

@@ -92,7 +92,9 @@ public:
     void                set_throttle_filter_cutoff(float filt_hz) { _throttle_filter.set_cutoff_frequency(filt_hz); }
     void                set_forward(float forward_in) { _forward_in = forward_in; }; // range -1 ~ +1
     void                set_lateral(float lateral_in) { _lateral_in = lateral_in; };     // range -1 ~ +1
-
+    void                set_yaw_force(float yaw_force){_yaw_force = yaw_force;};
+    void                set_forward_force(float forward_force){_forward_force = forward_force;};
+    void                set_lat_force(float lat_force){_lat_force = lat_force;};
     // accessors for roll, pitch, yaw and throttle inputs to motors
     float               get_roll() const { return _roll_in; }
     float               get_pitch() const { return _pitch_in; }
@@ -116,7 +118,7 @@ public:
     };
 
     void set_desired_spool_state(enum DesiredSpoolState spool);
-
+    void set_motor_mode(int motor_mode){_motor_mode = motor_mode;}; //0 is the initial mode
     enum DesiredSpoolState get_desired_spool_state(void) const { return _spool_desired; }
 
     // spool states
@@ -250,7 +252,10 @@ protected:
     bool                _thrust_boost;          // true if thrust boost is enabled to handle motor failure
     bool                _thrust_balanced;       // true when output thrust is well balanced
     float               _thrust_boost_ratio;    // choice between highest and second highest motor output for output mixing (0 ~ 1). Zero is normal operation
-
+    float               _yaw_force;
+    float               _forward_force;
+    float               _lat_force;
+    int                _motor_mode = 0; 
 private:
     static AP_Motors *_singleton;
 };

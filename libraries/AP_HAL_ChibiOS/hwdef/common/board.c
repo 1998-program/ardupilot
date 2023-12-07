@@ -232,8 +232,8 @@ void __early_init(void) {
 }
 
 void __late_init(void) {
-  halInit();
-  chSysInit();
+  halInit();        //HAL层初始化
+  chSysInit();      //chibios系统初始化
   stm32_watchdog_save_reason();
 #ifndef HAL_BOOTLOADER_BUILD
   stm32_watchdog_clear_reason();

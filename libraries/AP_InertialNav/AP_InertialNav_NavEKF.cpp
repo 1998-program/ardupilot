@@ -2,7 +2,7 @@
 #include "AP_InertialNav.h"
 
 #if AP_AHRS_NAVEKF_AVAILABLE
-
+extern const AP_HAL::HAL &hal;
 /*
   A wrapper around the AP_InertialNav class which uses the NavEKF
   filter if available, and falls back to the AP_InertialNav filter
@@ -17,8 +17,22 @@ void AP_InertialNav_NavEKF::update()
     // get the NE position relative to the local earth frame origin
     Vector2f posNE;
     if (_ahrs_ekf.get_relative_position_NE_origin(posNE)) {
-        _relpos_cm.x = posNE.x * 100; // convert from m to cm
-        _relpos_cm.y = posNE.y * 100; // convert from m to cm
+        _relpos_cm.x = posNE.x * 100 ; // convert from m to cm
+        _relpos_cm.y = posNE.y * 100 ; // convert from m to cm
+        //hal.uartC->printf("%f\n",_relpos_cm.x);
+    }
+
+    float gps_yaw;
+    if (_ahrs_ekf.get_gps_yaw(gps_yaw)) {
+        // if(gps_yaw <= 340 && gps_yaw >= 0){
+        //     _gps_yaw = gps_yaw + 20;
+        // }
+        // if(gps_yaw <= 360 && gps_yaw > 340){
+        //     _gps_yaw = gps_yaw - 340;
+        // }
+        
+        _gps_yaw = gps_yaw;
+       //hal.uartC->printf("yaw:%f\n",_gps_yaw);
     }
 
     // get the D position relative to the local earth frame origin
@@ -55,6 +69,10 @@ const Vector3f &AP_InertialNav_NavEKF::get_position(void) const
     return _relpos_cm;
 }
 
+const float &AP_InertialNav_NavEKF::get_gpsyaw(void) const 
+{
+    return _gps_yaw;
+}
 /**
  * get_velocity - returns the current velocity in cm/s
  *

@@ -289,3 +289,82 @@ void AP_GPS_Backend::check_new_itow(uint32_t itow, uint32_t msg_length)
         state.uart_timestamp_ms = local_us / 1000U;
     }
 }
+
+#if GPS_MOVING_BASELINE
+bool AP_GPS_Backend::calculate_moving_base_yaw(float reported_heading_degD){
+    return calculate_moving_base_yaw(state,reported_heading_degD);
+}
+bool AP_GPS_Backend::calculate_moving_base_yaw(AP_GPS::GPS_State &interim_state, const float reported_heading_deg){
+    if(reported_heading_deg >= 0 && reported_heading_deg <=340){
+        interim_state.gps_yaw = reported_heading_deg + 20;
+    }
+    if(reported_heading_deg > 340 && reported_heading_deg <= 360){
+        interim_state.gps_yaw = reported_heading_deg - 340;
+    }
+    return true;
+}
+// bool AP_GPS_Backend::calculate_moving_base_yaw(AP_GPS::GPS_State &interim_state, const float reported_heading_deg, const float reported_distance, const float reported_D) {
+//     constexpr float minimum_antenna_seperation = 0.05; // meters
+//     constexpr float permitted_error_length_pct = 0.2;  // percentage
+
+//     bool selectedOffset = false;
+//     Vector3f offset;
+//     switch (MovingBase::Type(gps.mb_params[interim_state.instance].type.get())) {
+//         case MovingBase::Type::RelativeToAlternateInstance:
+//             offset = gps._antenna_offset[interim_state.instance^1].get() - gps._antenna_offset[interim_state.instance].get();
+//             selectedOffset = true;
+//             break;
+//         case MovingBase::Type::RelativeToCustomBase:
+//             offset = gps.mb_params[interim_state.instance].base_offset.get();
+//             selectedOffset = true;
+//             break;
+//     }
+
+//     if (!selectedOffset) {
+//         // invalid type, let's throw up a flag
+//         INTERNAL_ERROR(AP_InternalError::error_t::flow_of_control);
+//         goto bad_yaw;
+//     }
+
+//     {
+//         const float offset_dist = offset.length();
+//         const float min_dist = MIN(offset_dist, reported_distance);
+
+//         if (offset_dist < minimum_antenna_seperation) {
+//             // offsets have to be sufficently large to get a meaningful angle off of them
+//             Debug("Insufficent antenna offset (%f, %f, %f)", (double)offset.x, (double)offset.y, (double)offset.z);
+//             goto bad_yaw;
+//         }
+
+//         if (reported_distance < minimum_antenna_seperation) {
+//             // if the reported distance is less then the minimum seperation it's not sufficently robust
+//             Debug("Reported baseline distance (%f) was less then the minimum antenna seperation (%f)",
+//                   (double)reported_distance, (double)minimum_antenna_seperation);
+//             goto bad_yaw;
+//         }
+
+
+//         if ((offset_dist - reported_distance) > (min_dist * permitted_error_length_pct)) {
+//             // the magnitude of the vector is much further then we were expecting
+//             Debug("Exceeded the permitted error margin %f > %f",
+//                   (double)(offset_dist - reported_distance), (double)(min_dist * permitted_error_length_pct));
+//             goto bad_yaw;
+//         }
+
+
+//         {
+//             // at this point the offsets are looking okay, go ahead and actually calculate a useful heading
+//             const float rotation_offset_rad = Vector2f(-offset.x, -offset.y).angle();
+//             interim_state.gps_yaw = wrap_360(reported_heading_deg - degrees(rotation_offset_rad));
+//             interim_state.have_gps_yaw = true;
+//             interim_state.gps_yaw_time_ms = AP_HAL::millis();
+//         }
+//     }
+
+//     return true;
+
+// bad_yaw:
+//     interim_state.have_gps_yaw = false;
+//     return false;
+// }
+#endif // GPS_MOVING_BASELINE

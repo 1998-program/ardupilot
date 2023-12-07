@@ -51,6 +51,14 @@ void Sub::check_ekf_yaw_reset()
     }
 }
 
+float Sub::asv_get_yaw()
+{
+    yaw_look_at_WP_bearing = get_bearing_cd(inertial_nav.get_position(), wp_nav.get_destination());
+    return yaw_look_at_WP_bearing;
+}
+
+
+
 /*************************************************************
  * yaw controllers
  *************************************************************/

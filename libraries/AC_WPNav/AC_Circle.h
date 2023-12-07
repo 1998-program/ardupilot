@@ -25,6 +25,7 @@ public:
     /// init - initialise circle controller setting center using stopping point and projecting out based on the copter's heading
     ///     caller should set the position controller's x,y and z speeds and accelerations before calling this
     void init();
+    void asv_init();
 
     /// set_circle_center in cm from home
     void set_center(const Vector3f& center) { _center = center; }

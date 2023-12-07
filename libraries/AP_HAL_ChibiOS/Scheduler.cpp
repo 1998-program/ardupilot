@@ -68,11 +68,11 @@ Scheduler::Scheduler()
 
 void Scheduler::init()
 {
-    chBSemObjectInit(&_timer_semaphore, false);
-    chBSemObjectInit(&_io_semaphore, false);
+    chBSemObjectInit(&_timer_semaphore, false);     //定时器二进制信号量创建，初始状态是0，没有被录用，所以后面的信号量可以被使用
+    chBSemObjectInit(&_io_semaphore, false);        //IO二进制信号量创建，初始状态是0，没有被录用，所以后面的信号可以被使用
 
 #ifndef HAL_NO_MONITOR_THREAD
-    // setup the monitor thread - this is used to detect software lockups
+    // setup the monitor thread - this is used to detect software lockups      监视器线程创建，这将调用任务在1kHz
     _monitor_thread_ctx = chThdCreateStatic(_monitor_thread_wa,
                      sizeof(_monitor_thread_wa),
                      APM_MONITOR_PRIORITY,        /* Initial priority.    */
@@ -81,7 +81,7 @@ void Scheduler::init()
 #endif
 
 #ifndef HAL_NO_TIMER_THREAD
-    // setup the timer thread - this will call tasks at 1kHz
+    // setup the timer thread - this will call tasks at 1kHz    设定定时器线程，这将调用任务在1kHz
     _timer_thread_ctx = chThdCreateStatic(_timer_thread_wa,
                      sizeof(_timer_thread_wa),
                      APM_TIMER_PRIORITY,        /* Initial priority.    */
@@ -90,7 +90,7 @@ void Scheduler::init()
 #endif
 
 #ifndef HAL_NO_RCIN_THREAD
-    // setup the RCIN thread - this will call tasks at 1kHz
+    // setup the RCIN thread - this will call tasks at 1kHz     设定RCIN线程，这将调用任务在1kHz
     _rcin_thread_ctx = chThdCreateStatic(_rcin_thread_wa,
                      sizeof(_rcin_thread_wa),
                      APM_RCIN_PRIORITY,        /* Initial priority.    */

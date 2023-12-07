@@ -19,9 +19,11 @@ bool Sub::auto_init()
 
     // stop ROI from carrying over from previous runs of the mission
     // To-Do: reset the yaw as part of auto_wp_start when the previous command was not a wp command to remove the need for this special ROI check
+/*as
     if (auto_yaw_mode == AUTO_YAW_ROI) {
         set_auto_yaw_mode(AUTO_YAW_HOLD);
     }
+*/
 
     // initialise waypoint and spline controller
     wp_nav.wp_and_spline_init();
@@ -46,7 +48,7 @@ void Sub::auto_run()
 
     case Auto_WP:
     case Auto_CircleMoveToEdge:
-        auto_wp_run();
+        asv_auto_wp_run();
         break;
 
     case Auto_Circle:
@@ -96,7 +98,7 @@ void Sub::auto_wp_start(const Location& dest_loc)
     // send target to waypoint controller
     if (!wp_nav.set_wp_destination(dest_loc)) {
         // failure to set destination can only be because of missing terrain data
-        failsafe_terrain_on_event();
+ //       failsafe_terrain_on_event();
         return;
     }
 
@@ -171,6 +173,100 @@ void Sub::auto_wp_run()
         attitude_control.input_euler_angle_roll_pitch_yaw(target_roll, target_pitch, get_auto_heading(), true);
     }
 }
+
+// auto_wp_run - runs the auto waypoint controller
+//      called by auto_run at 100hz or more
+// by FXC
+
+void Sub::asv_auto_wp_run()
+{               
+    if (!motors.armed()) {
+        motors.set_desired_spool_state(AP_Motors::DesiredSpoolState::GROUND_IDLE);
+        attitude_control.set_throttle_out(0,true,g.throttle_filt);
+        attitude_control.relax_attitude_controllers();
+        return;
+    }
+
+    motors.set_desired_spool_state(AP_Motors::DesiredSpoolState::THROTTLE_UNLIMITED);   
+
+    //hal.uartC->printf("yaw:%f\n",inertial_nav.get_gpsyaw());
+
+    gps_yaw = inertial_nav.get_gpsyaw();
+    //hal.uartC->printf("yaw%f\n",gps_yaw);
+    float gps_yaw_rad = radians(gps_yaw);
+    float gps_yaw_cos = cosf(gps_yaw_rad);
+    
+    float gps_yaw_sin = sinf(gps_yaw_rad);
+    //hal.uartC->printf("cosyaw%f\n",gps_yaw_cos);
+
+    // float asv_yaw_pid_error;
+    // asv_yaw_pid_error = asv_get_yaw() - ahrs.yaw_sensor;
+    // if(asv_yaw_pid_error > 18000){
+    //     asv_yaw_pid_error = asv_yaw_pid_error - 36000;
+    // }
+    // else if(asv_yaw_pid_error < -18000){
+    //     asv_yaw_pid_error = asv_yaw_pid_error + 36000;
+    // }
+    // asv_yaw_robust_error_rad = radians(asv_yaw_pid_error* 0.01);
+
+    // float asv_yaw_pid_error;
+    // asv_yaw_pid_error = asv_get_yaw() - gps_yaw * 100;
+    // if(asv_yaw_pid_error > 18000){
+    //     asv_yaw_pid_error = asv_yaw_pid_error - 36000;
+    // }
+    // else if(asv_yaw_pid_error < -18000){
+    //     asv_yaw_pid_error = asv_yaw_pid_error + 36000;
+    // }
+
+
+    float asv_yaw_pid_error;
+    asv_yaw_pid_error = 9000 - gps_yaw * 100;
+    if(asv_yaw_pid_error > 18000){
+        asv_yaw_pid_error = asv_yaw_pid_error - 36000;
+    }
+    else if(asv_yaw_pid_error < -18000){
+        asv_yaw_pid_error = asv_yaw_pid_error + 36000;
+    }
+
+    asv_yaw_robust_error_rad = radians(asv_yaw_pid_error* 0.01);
+
+    asv_x_robust_error = (pos_control.get_pos_target_x() - inertial_nav.get_position().x)/100;
+    asv_y_robust_error = (pos_control.get_pos_target_y() - inertial_nav.get_position().y)/100;
+
+    asv_x_robust_error_b = asv_x_robust_error * gps_yaw_cos + asv_y_robust_error * gps_yaw_sin;
+    asv_y_robust_error_b = -asv_x_robust_error * gps_yaw_sin + asv_y_robust_error * gps_yaw_cos;
+
+    float asv_error[3];
+    
+        asv_error[0] = asv_x_robust_error_b ;
+        asv_error[1] = asv_y_robust_error_b;
+        asv_error[2] = asv_yaw_robust_error_rad;
+    
+
+    send_to_rasp(asv_error,control_robust,asv_arm);
+    wp_nav.asv_update_wpnav();
+
+    asv_x_robust_force = constrain_float(asv_x_robust_force,-25,25);
+    asv_y_robust_force = constrain_float(asv_y_robust_force,-10,10);
+    asv_yaw_robust_force = constrain_float(asv_yaw_robust_force,-12,12);
+
+    //hal.uartC->printf("%f\n",asv_x_robust_force);
+// if(asv_x_robust_error_b<0.25 && asv_x_robust_error_b >-0.25){
+
+//     motors.set_forward_force(asv_x_robust_force);
+//     motors.set_lat_force(asv_y_robust_force);
+//     motors.set_yaw_force(0);
+// }
+// else{
+    motors.set_forward_force(asv_x_robust_force);
+    motors.set_lat_force(asv_y_robust_force);
+    // motors.set_forward_force(0);
+    // motors.set_lat_force(0);
+    motors.set_yaw_force(asv_yaw_robust_force);
+    //motors.set_yaw_force(0);
+
+}
+
 
 // auto_spline_start - initialises waypoint controller to implement flying to a particular destination using the spline controller
 //  seg_end_type can be SEGMENT_END_STOP, SEGMENT_END_STRAIGHT or SEGMENT_END_SPLINE.  If Straight or Spline the next_destination should be provided

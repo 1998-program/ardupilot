@@ -16,7 +16,20 @@
 /*
   This is the main Sub class
  */
+#define Frame_Header1 0x3A // 串口接收消息包的帧头的第1个字节
+#define Frame_Header2 0x3B // 串口接收消息包的帧头的第2个字节
+// 完整的帧尾，2个字节
+#define Frame_Tail1 0x7E // 串口接收消息包的帧尾的第1个字节
+#define Frame_Tail2 0x7F // 串口接收消息包的帧尾的第2个字节
 
+#define control_robust     0x79
+
+#define protocol_len 2
+#define protocol_payload  5
+
+#define asv_arm         0x0f
+#define asv_disarm      0x00
+#define turnon      0x80
 ////////////////////////////////////////////////////////////////////////////////
 // Header includes
 ////////////////////////////////////////////////////////////////////////////////
@@ -128,7 +141,7 @@
 #include <SITL/SITL.h>
 #endif
 
-class Sub : public AP_HAL::HAL::Callbacks {
+class Sub : public AP_HAL::HAL::Callbacks {         //直接从封装接口框架set_up和loop的抽象类CallBack进行派生，实现了set_up和loop方法
 public:
     friend class GCS_MAVLINK_Sub;
     friend class GCS_Sub;
@@ -152,6 +165,7 @@ private:
     // Global parameters are all contained within the 'g' class.
     Parameters g;
     ParametersG2 g2;
+
 
     // main loop scheduler
     AP_Scheduler scheduler{FUNCTOR_BIND_MEMBER(&Sub::fast_loop, void)};
@@ -218,7 +232,7 @@ private:
 
     // GCS selection
     GCS_Sub _gcs; // avoid using this; use gcs()
-    GCS_Sub &gcs() { return _gcs; }
+    GCS_Sub &gcs() { return _gcs; }         //函数的返回值为引用，相当于_gcs= ...
 
     // User variables
 #ifdef USERHOOK_VARIABLES
@@ -347,6 +361,11 @@ private:
     // Input gain
     float gain;
 
+    float asv_yaw_force;
+    float asv_forward_force;
+    float asv_lat_force;
+    float hc_yaw_pid_error;
+    
     // Flag indicating if we are currently using input hold
     bool input_hold_engaged;
 
@@ -363,6 +382,8 @@ private:
 
     // bearing from current location to the yaw_look_at_WP
     float yaw_look_at_WP_bearing;
+    
+  //  float yaw_current；
 
     float yaw_xtrack_correct_heading;
 
@@ -394,6 +415,8 @@ private:
     AC_AttitudeControl_Sub attitude_control;
 
     AC_PosControl_Sub pos_control;
+
+    int frequency_divider = 0;
 
     AC_WPNav wp_nav;
     AC_Loiter loiter_nav;
@@ -447,6 +470,43 @@ private:
     // setup the var_info table
     AP_Param param_loader;
 
+
+
+    union asv_control
+    {
+        float value;
+        unsigned char value_char[4];	
+    }yaw_force,yaw_error,x_force,x_error,y_force,y_error;
+
+    union tran
+    {
+        float value;
+        unsigned char value_char[4];	
+    }temp;
+
+    float asv_yaw_robust_force = 0;
+
+    unsigned char _buffertx[100];
+    unsigned char _bufferrx[100];
+    int temp_pass_flag = 0;
+    int f_h1_flag;
+    int f_h_flag;
+    int f_t1_flag;
+    float asv_x_robust_force = 0;
+    float asv_y_robust_force = 0;
+
+    float asv_x_robust_force_b;
+    float asv_y_robust_force_b;
+
+    float asv_yaw_robust_error_rad = 0;
+    float asv_x_robust_error = 0;
+    float asv_y_robust_error = 0;
+
+    float gps_yaw = 0;
+
+    float asv_x_robust_error_b = 0;
+    float asv_y_robust_error_b = 0;
+
     uint32_t last_pilot_heading;
     uint32_t last_input_ms;
     int32_t last_roll;
@@ -459,6 +519,8 @@ private:
     static const AP_Param::Info var_info[];
     static const struct LogStructure log_structure[];
 
+    void send_to_rasp(float* error,int mode,int isarm);
+    void receive_from_rasp();
     void fast_loop();
     void fifty_hz_loop();
     void update_batt_compass(void);
@@ -475,6 +537,7 @@ private:
     float get_pilot_desired_yaw_rate(int16_t stick_angle);
     void check_ekf_yaw_reset();
     float get_roi_yaw();
+    float asv_get_yaw();
     float get_look_ahead_yaw();
     float get_pilot_desired_climb_rate(float throttle_control);
     float get_surface_tracking_climb_rate(int16_t target_rate, float current_alt_target, float dt);
@@ -488,6 +551,7 @@ private:
     void Log_Write_Performance();
     void Log_Write_Attitude();
     void Log_Write_MotBatt();
+    void Log_write_ASV_Robust();
     void Log_Write_Event(Log_Event id);
     void Log_Write_Data(uint8_t id, int32_t value);
     void Log_Write_Data(uint8_t id, uint32_t value);
@@ -528,6 +592,7 @@ private:
     void auto_wp_start(const Vector3f& destination);
     void auto_wp_start(const Location& dest_loc);
     void auto_wp_run();
+	void asv_auto_wp_run();
     void auto_spline_run();
     void auto_circle_movetoedge_start(const Location &circle_center, float radius_m);
     void auto_circle_start();
@@ -565,6 +630,10 @@ private:
 
     bool poshold_init(void);
     void poshold_run();
+	bool circle2_init(void);
+	void circle2_run();
+
+    
 
     bool motordetect_init();
     void motordetect_run();
@@ -674,11 +743,15 @@ private:
     void auto_terrain_recover_run(void);
 
     void translate_wpnav_rp(float &lateral_out, float &forward_out);
+	void asv_translate_wpnav_rp(float &lateral_out, float &forward_out);
     void translate_circle_nav_rp(float &lateral_out, float &forward_out);
     void translate_pos_control_rp(float &lateral_out, float &forward_out);
 
     bool surface_init(void);
     void surface_run();
+
+	bool yaw_init(void);
+	void yaw_run();
 
     uint16_t get_pilot_speed_dn();
 

@@ -532,10 +532,11 @@ void AP_GPS::detect_instance(uint8_t instance)
         */
         if ((_type[instance] == GPS_TYPE_AUTO || _type[instance] == GPS_TYPE_UBLOX) &&
             ((!_auto_config && _baudrates[dstate->current_baud] >= 38400) ||
-             _baudrates[dstate->current_baud] == 115200) &&
+             _baudrates[dstate->current_baud] == 230400) &&
             AP_GPS_UBLOX::_detect(dstate->ublox_detect_state, data)) {
             new_gps = new AP_GPS_UBLOX(*this, state[instance], _port[instance]);
         }
+        
 #ifndef HAL_BUILD_AP_PERIPH
 #if !HAL_MINIMIZE_FEATURES
         // we drop the MTK drivers when building a small build as they are so rarely used
@@ -647,7 +648,7 @@ void AP_GPS::update_instance(uint8_t instance)
     }
 
     // we have an active driver for this instance
-    bool result = drivers[instance]->read();
+    bool result = drivers[instance]->read();        //实现数据更新的函数，之后有一个计时，如果2s没收到数据则重新初始化GPS。
     uint32_t tnow = AP_HAL::millis();
 
     // if we did not get a message, and the idle timer of 2 seconds

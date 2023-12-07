@@ -166,7 +166,7 @@ static void main_loop()
     daemon_task = chThdGetSelfX();
 
     /*
-      switch to high priority for main loop
+      switch to high priority for main loop         把main loop的优先级切换到高
      */
     chThdSetPriority(APM_MAIN_PRIORITY);
 
@@ -188,8 +188,8 @@ static void main_loop()
 
     hal.uartB->begin(38400);
     hal.uartC->begin(57600);
-    hal.analogin->init();
-    hal.scheduler->init();
+    hal.analogin->init();       //模拟输入初始化，主要测试ADC功能，检查电源电压
+    hal.scheduler->init();      //初始化任务init线程
 
     /*
       run setup() at low priority to ensure CLI doesn't hang the
@@ -249,7 +249,7 @@ static void main_loop()
     chThdSetPriority(APM_MAIN_PRIORITY);
 
     while (true) {
-        g_callbacks->loop();
+        g_callbacks->loop();//g_callbacks = callback,这是一个指针。sub这一对象的地址 = callback，所以就可以指向sub这一类
 
         /*
           give up 50 microseconds of time if the INS loop hasn't
@@ -270,13 +270,15 @@ static void main_loop()
 }
 
 void HAL_ChibiOS::run(int argc, char * const argv[], Callbacks* callbacks) const
-{
+{   
     /*
      * System initializations.
      * - ChibiOS HAL initialization, this also initializes the configured device drivers
      *   and performs the board-specific initializations.
      * - Kernel initialization, the main() function becomes a thread and the
      *   RTOS is active.
+     系统初始化。ChibiOS HAL初始化，这也会初始化已配置的设备驱动程序并执行特定于主板的初始化。
+     内核初始化时，main()函数变为线程，并且RTOS处于活动状态。
      */
 
 #ifdef HAL_USB_PRODUCT_ID
@@ -302,7 +304,8 @@ void HAL_ChibiOS::run(int argc, char * const argv[], Callbacks* callbacks) const
     main_loop();
 }
 
-const AP_HAL::HAL& AP_HAL::get_HAL() {
+const AP_HAL::HAL& AP_HAL::get_HAL() {          //定义一个静态HAL_ChibiOS对象，并返回其饮用，依然是面向接口
+                                                //libraires/AP_HAL_ChibiOS/HAL_ChibiOS_Class.cpp中实现了get_HAL函数，其创建并返回HAL实例
     static const HAL_ChibiOS hal_chibios;
     return hal_chibios;
 }

@@ -209,6 +209,7 @@ public:
         k_param_cam_slew_limit = 237, // deprecated
         k_param_lights_steps,
         k_param_pilot_speed_dn,
+	k_param_heading_control,  //240 -- FXC
 
     };
 
@@ -301,6 +302,7 @@ public:
 
     AP_Float                surface_depth;
     AP_Int8                 frame_configuration;
+    AP_Int16                heading_control;
 
     // Note: keep initializers here in the same order as they are declared
     // above.

@@ -222,7 +222,10 @@ float Location::get_distance(const struct Location &loc2) const
     float dlng = ((float)(loc2.lng - lng)) * loc2.longitude_scale();
     return norm(dlat, dlng) * LOCATION_SCALING_FACTOR;
 }
-
+Vector2f Location::get_origin_NE(const Location &loc2) const
+{
+    return Vector2f(loc2.lat,loc2.lng);
+}
 
 /*
   return the distance in meters in North/East plane as a N/E vector

@@ -67,7 +67,8 @@ public:
 
     // return the distance in meters in North/East plane as a N/E vector to loc2
     Vector2f get_distance_NE(const Location &loc2) const;
-
+    
+    Vector2f get_origin_NE(const Location &loc2) const;
     // extrapolate latitude/longitude given distances (in meters) north and east
     void offset(float ofs_north, float ofs_east);
 

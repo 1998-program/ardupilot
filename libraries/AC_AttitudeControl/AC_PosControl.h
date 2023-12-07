@@ -89,6 +89,14 @@ public:
     /// set_alt_target - set altitude target in cm above home
     void set_alt_target(float alt_cm) { _pos_target.z = alt_cm; }
 
+    float get_pos_target_x() const {return _pos_target.x;}
+    float get_pos_target_y() const {return _pos_target.y;}
+
+	float get_vel_target_x() const {return _vel_target.x;}
+	float get_vel_target_y() const {return _vel_target.y;}
+	float get_acc_target_x() const {return _accel_target.x;}
+	float get_acc_target_y() const {return _accel_target.y;}
+
     /// set_alt_target_with_slew - adjusts target towards a final altitude target
     ///     should be called continuously (with dt set to be the expected time between calls)
     ///     actual position target will be moved no faster than the speed_down and speed_up
@@ -150,6 +158,7 @@ public:
     // get_leash_down_z, get_leash_up_z - returns vertical leash lengths in cm
     float get_leash_down_z() const { return _leash_down_z; }
     float get_leash_up_z() const { return _leash_up_z; }
+	Vector3f get_asv_cur_pos();
 
     ///
     /// xy position controller
@@ -173,6 +182,9 @@ public:
     ///     leash length will be recalculated
     void set_max_speed_xy(float speed_cms);
     float get_max_speed_xy() const { return _speed_cms; }
+
+    float get_asv_forward_force() const{return asv_forward_force_b;}
+    float get_asv_lat_force() const{return asv_lat_force_b;}
 
     /// set_limit_accel_xy - mark that accel has been limited
     ///     this prevents integrator buildup
@@ -267,6 +279,14 @@ public:
     /// get desired roll, pitch which should be fed into stabilize controllers
     float get_roll() const { return _roll_target; }
     float get_pitch() const { return _pitch_target; }
+    float get_forward() const { return _accel_target.x; }
+	float get_lateral() const { return _accel_target.y; }
+
+    float asv_x_error_rb;
+    float asv_y_error_rb;
+
+    float get_rb_error_x() { return asv_x_error_rb;}
+    float get_rb_error_y() { return asv_y_error_rb;} 
 
     // get_leash_xy - returns horizontal leash length in cm
     float get_leash_xy() const { return _leash; }
@@ -350,6 +370,8 @@ protected:
     ///     converts desired velocities in lat/lon directions to accelerations in lat/lon frame
     ///     converts desired accelerations provided in lat/lon frame to roll/pitch angles
     void run_xy_controller(float dt);
+	void asv_yaw_controller(float dt);
+	void asv_run_xy_controller(float dt);
 
     /// calc_leash_length - calculates the horizontal leash length given a maximum speed, acceleration and position kP gain
     float calc_leash_length(float speed_cms, float accel_cms, float kP) const;
@@ -413,6 +435,11 @@ protected:
     LowPassFilterFloat _vel_error_filter;   // low-pass-filter on z-axis velocity error
 
     LowPassFilterVector2f _accel_target_filter; // acceleration target filter
+
+    float asv_forward_force;
+    float asv_forward_force_b;
+    float asv_lat_force_b;
+    float asv_lat_force;
 
     // ekf reset handling
     uint32_t    _ekf_xy_reset_ms;      // system time of last recorded ekf xy position reset

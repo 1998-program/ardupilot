@@ -84,7 +84,8 @@ public:
     // If a calculated solution is not available, use the best available data and return false
     // If false returned, do not use for flight control
     bool getPosD(int8_t instance, float &posD) const;
-
+    
+    bool getgpsyaw(int8_t instance, float &gpsyaw) const;
     // return NED velocity in m/s for the specified instance
     // An out of range instance (eg -1) returns data for the primary instance
     void getVelNED(int8_t instance, Vector3f &vel) const;

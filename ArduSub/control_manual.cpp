@@ -25,6 +25,7 @@ void Sub::manual_run()
         return;
     }
 
+    
     motors.set_desired_spool_state(AP_Motors::DesiredSpoolState::THROTTLE_UNLIMITED);
 
     motors.set_roll(channel_roll->norm_input());

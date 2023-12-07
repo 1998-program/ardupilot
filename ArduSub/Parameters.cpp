@@ -598,6 +598,7 @@ const AP_Param::Info Sub::var_info[] = {
     // @Group:
     // @Path: Parameters.cpp
     GOBJECT(g2, "",  ParametersG2),
+    GSCALAR(heading_control, "HEADING_CONTROL",  HEADING_CONTROL),
 
     AP_VAREND
 };

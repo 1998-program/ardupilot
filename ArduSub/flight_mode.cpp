@@ -36,6 +36,9 @@ bool Sub::set_mode(control_mode_t mode, mode_reason_t reason)
     case CIRCLE:
         success = circle_init();
         break;
+    case CIRCLE2:
+        success = circle2_init();
+        break;	
 
     case GUIDED:
         success = guided_init();
@@ -44,6 +47,9 @@ bool Sub::set_mode(control_mode_t mode, mode_reason_t reason)
     case SURFACE:
         success = surface_init();
         break;
+	case YAW:
+		success = yaw_init();
+		break;
 
 #if POSHOLD_ENABLED == ENABLED
     case POSHOLD:
@@ -117,11 +123,17 @@ void Sub::update_flight_mode()
         break;
 
     case AUTO:
+        motors.set_motor_mode(1);
         auto_run();
+        
         break;
 
     case CIRCLE:
         circle_run();
+        break;
+
+	case CIRCLE2:
+        circle2_run();
         break;
 
     case GUIDED:
@@ -132,6 +144,10 @@ void Sub::update_flight_mode()
         surface_run();
         break;
 
+	case YAW:
+		yaw_run();
+		break;
+
 #if POSHOLD_ENABLED == ENABLED
     case POSHOLD:
         poshold_run();
@@ -139,6 +155,7 @@ void Sub::update_flight_mode()
 #endif
 
     case MANUAL:
+        motors.set_motor_mode(0);
         manual_run();
         break;
 

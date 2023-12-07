@@ -888,6 +888,14 @@ bool NavEKF2::getPosD(int8_t instance, float &posD) const
     return core[instance].getPosD(posD);
 }
 
+bool NavEKF2::getgpsyaw(int8_t instance, float &gpsyaw) const{
+    if (instance < 0 || instance >= num_cores) instance = primary;
+    if (!core) {
+        return false;
+    }
+    return core[instance].getgpsyaw(gpsyaw);
+}
+
 // return NED velocity in m/s
 void NavEKF2::getVelNED(int8_t instance, Vector3f &vel) const
 {

@@ -42,6 +42,14 @@
 
 #define UNIX_OFFSET_MSEC (17000ULL * 86400ULL + 52ULL * 10ULL * AP_MSEC_PER_WEEK - GPS_LEAPSECONDS_MILLIS)
 
+#ifndef GPS_MOVING_BASELINE
+#define GPS_MOVING_BASELINE !HAL_MINIMIZE_FEATURES && GPS_MAX_RECEIVERS>1
+#endif
+
+#if GPS_MOVING_BASELINE
+#include "MovingBase.h"
+#endif // GPS_MOVING_BASELINE
+
 class AP_GPS_Backend;
 
 /// @class AP_GPS
@@ -164,6 +172,12 @@ public:
         int32_t  rtk_baseline_z_mm;        ///< Current baseline in ECEF z or NED down component in mm
         uint32_t rtk_accuracy;             ///< Current estimate of 3D baseline accuracy (receiver dependent, typical 0 to 9999)
         int32_t  rtk_iar_num_hypotheses;   ///< Current number of integer ambiguity hypotheses
+
+        float relPosHeading;
+        float relPosLength;
+        float relPosD;
+        float accHeading;
+        uint32_t relposheading_ts;
     };
 
     /// Startup initialisation.
@@ -210,6 +224,20 @@ public:
     }
     const Location &location() const {
         return location(primary_instance);
+    }
+
+    const float&yaw(uint8_t instance) const{
+        // if(state[instance].relPosHeading <= 340 && state[instance].relPosHeading >= 0){
+        //     return state[instance].relPosHeading + 20;
+        // }
+        // if(state[instance].relPosHeading <= 360 && state[instance].relPosHeading > 340){    
+        //     return state[instance].relPosHeading - 340;
+        // }
+        return state[instance].gps_yaw;
+    }
+
+    const float &yaw() const{
+        return yaw(primary_instance);
     }
 
     // report speed accuracy
@@ -456,6 +484,9 @@ protected:
     AP_Float _blend_tc;
 
     uint32_t _log_gps_bit = -1;
+#if GPS_MOVING_BASELINE
+    MovingBase mb_params[GPS_MAX_RECEIVERS];
+#endif // GPS_MOVING_BASELINE
 
 private:
     static AP_GPS *_singleton;

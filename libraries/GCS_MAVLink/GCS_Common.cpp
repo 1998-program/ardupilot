@@ -746,6 +746,7 @@ ap_message GCS_MAVLINK::mavlink_id_to_ap_message_id(const uint32_t mavlink_id) c
         { MAVLINK_MSG_ID_PARAM_VALUE,           MSG_NEXT_PARAM},
         { MAVLINK_MSG_ID_FENCE_STATUS,          MSG_FENCE_STATUS},
         { MAVLINK_MSG_ID_AHRS,                  MSG_AHRS},
+        { MAVLINK_MSG_ID_RASP_CONTROL_DATA,     MSG_RASP_CONTROL_DATA},
         { MAVLINK_MSG_ID_SIMSTATE,              MSG_SIMSTATE},
         { MAVLINK_MSG_ID_AHRS2,                 MSG_AHRS2},
         { MAVLINK_MSG_ID_AHRS3,                 MSG_AHRS3},
@@ -1736,7 +1737,6 @@ void GCS_MAVLINK::send_ahrs()
         ahrs.get_error_rp(),
         ahrs.get_error_yaw());
 }
-
 /*
     send a statustext text string to specific MAVLink bitmask
 */
@@ -1888,7 +1888,7 @@ void GCS::setup_console()
     AP_HAL::UARTDriver *uart = AP::serialmanager().find_serial(AP_SerialManager::SerialProtocol_MAVLink, 0);
     if (uart == nullptr) {
         // this is probably not going to end well.
-        return;
+        return;     
     }
     if (ARRAY_SIZE(chan_parameters) == 0) {
         return;
@@ -2211,7 +2211,45 @@ void GCS_MAVLINK::send_heartbeat() const
         base_mode(),
         gcs().custom_mode(),
         system_status());
+
+/*
+       const AP_AHRS &ahrs = AP::ahrs();
+    const Vector3f &omega_I = ahrs.get_gyro_drift();
+    mavlink_msg_rasp_control_data_send(
+        chan,
+        omega_I.x,
+        omega_I.y,
+        omega_I.z,
+        0,
+        0,
+        0,
+        0,
+        0,
+        ahrs.get_error_rp(),
+        ahrs.get_error_yaw());
+*/
 }
+/*
+void GCS_MAVLINK::send_rasp_control_data() const
+{
+    const AP_AHRS &ahrs = AP::ahrs();
+    const Vector3f &omega_I = ahrs.get_gyro_drift();
+    mavlink_msg_rasp_control_data_send(
+        chan,
+        omega_I.x,
+        omega_I.y,
+        omega_I.z,
+        0,
+        0,
+        0,
+        0,
+        0,
+        ahrs.get_error_rp(),
+        ahrs.get_error_yaw());
+
+}
+*/
+
 
 MAV_RESULT GCS_MAVLINK::handle_command_set_message_interval(const mavlink_command_long_t &packet)
 {
@@ -3976,12 +4014,14 @@ void GCS_MAVLINK::send_attitude() const
 {
     const AP_AHRS &ahrs = AP::ahrs();
     const Vector3f omega = ahrs.get_gyro();
+    
     mavlink_msg_attitude_send(
         chan,
         AP_HAL::millis(),
         ahrs.roll,
         ahrs.pitch,
-        ahrs.yaw,
+        //ahrs.yaw,
+        radians(AP::gps().yaw()),
         omega.x,
         omega.y,
         omega.z);
@@ -4091,6 +4131,7 @@ bool GCS_MAVLINK::try_send_message(const enum ap_message id)
         CHECK_PAYLOAD_SIZE(HEARTBEAT);
         last_heartbeat_time = AP_HAL::millis();
         send_heartbeat();
+//	send_rasp_control_data();
         break;
 
     case MSG_HWSTATUS:
@@ -4312,12 +4353,18 @@ bool GCS_MAVLINK::try_send_message(const enum ap_message id)
     case MSG_NAV_CONTROLLER_OUTPUT:
         CHECK_PAYLOAD_SIZE(NAV_CONTROLLER_OUTPUT);
         send_nav_controller_output();
+
         break;
 
     case MSG_AHRS:
         CHECK_PAYLOAD_SIZE(AHRS);
         send_ahrs();
         break;
+
+    case MSG_RASP_CONTROL_DATA:
+	CHECK_PAYLOAD_SIZE(RASP_CONTROL_DATA);
+	send_rasp_control_data();
+	break;
 
     case MSG_EXTENDED_SYS_STATE:
         CHECK_PAYLOAD_SIZE(EXTENDED_SYS_STATE);

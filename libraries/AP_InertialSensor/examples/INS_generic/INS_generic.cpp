@@ -6,7 +6,12 @@
 #include <AP_BoardConfig/AP_BoardConfig.h>
 #include <AP_InertialSensor/AP_InertialSensor.h>
 
-const AP_HAL::HAL &hal = AP_HAL::get_HAL();
+const AP_HAL::HAL &hal = AP_HAL::get_HAL();     //在四大系统软硬件平台中实现，如HAL_ChibiOS中
+
+// const AP_HAL::HAL& AP_HAL::get_HAL() {          //定义一个静态HAL_ChibiOS对象，并返回其饮用，依然是面向接口
+//     static const HAL_ChibiOS hal_chibios;
+//     return hal_chibios;
+// }
 
 static AP_InertialSensor ins;
 

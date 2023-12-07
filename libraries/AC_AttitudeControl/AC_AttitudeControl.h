@@ -125,15 +125,27 @@ public:
     // handle reset of attitude from EKF since the last iteration
     void inertial_frame_reset();
 
+    float ASV_YAW_PID(float target, float measurement, bool limit, float Kp, float Ki, float Kd);
+    float ASV_FORWARD_PID(float target, float measurement, bool limit, float Kp, float Ki, float Kd);
+     float ASV_LAT_PID(float target, float measurement, bool limit, float Kp, float Ki, float Kd);
+
     // Command a Quaternion attitude with feedforward and smoothing
     void input_quaternion(Quaternion attitude_desired_quat);
+
+    void return_yaw_error(float error);
 
     // Command an euler roll and pitch angle and an euler yaw rate with angular velocity feedforward and smoothing
     virtual void input_euler_angle_roll_pitch_euler_rate_yaw(float euler_roll_angle_cd, float euler_pitch_angle_cd, float euler_yaw_rate_cds);
 
+    virtual void asv_input_euler_angle_roll_pitch_euler_rate_yaw(float euler_roll_angle_cd, float euler_pitch_angle_cd, float euler_yaw_rate_cds);
+
     // Command an euler roll, pitch and yaw angle with angular velocity feedforward and smoothing
     virtual void input_euler_angle_roll_pitch_yaw(float euler_roll_angle_cd, float euler_pitch_angle_cd, float euler_yaw_angle_cd, bool slew_yaw);
 
+    virtual void asv_input_euler_angle_yaw(float euler_yaw_angle_cd);
+    
+
+    void asv_pid_yaw_controller_run(float yaw_error);
     // Command euler yaw rate and pitch angle with roll angle specified in body frame with multicopter style controls
     // (used only by tailsitter quadplanes)
     virtual void input_euler_rate_yaw_euler_angle_pitch_bf_roll_m(float euler_roll_angle_cd, float euler_pitch_angle_cd, float euler_yaw_rate_cds);
@@ -236,6 +248,7 @@ public:
 
     // Return throttle increase applied for tilt compensation
     float angle_boost() const { return _angle_boost; }
+    
 
     // Return tilt angle limit for pilot input that prioritises altitude hold over lean angle
     float get_althold_lean_angle_max() const;
@@ -272,7 +285,9 @@ public:
 
     // Calculates the body frame angular velocities to follow the target attitude
     void attitude_controller_run_quat();
+	void asv_attitude_controller_run_quat();
 
+    void asv_pid_yaw_controller_run();
     // sanity check parameters.  should be called once before take-off
     virtual void parameter_sanity_check() {}
 
@@ -349,6 +364,35 @@ protected:
     AC_P                _p_angle_pitch;
     AC_P                _p_angle_yaw;
 
+
+
+    float hc_yaw_error;
+    float hc_yaw_target;
+    float hc_yaw_dt;
+    float hc_yaw_derivative;
+    float hc_yaw_integrator;
+
+    float hc_x_error;
+    float hc_x_target;
+    float hc_x_dt;
+    float hc_x_derivative;
+    float hc_x_integrator;
+
+    float * asv_robust_error;
+
+    float hc_y_error;
+    float hc_y_target;
+    float hc_y_dt;
+    float hc_y_derivative;
+    float hc_y_integrator;
+
+
+    float hc_vel_error;
+    float hc_vel_target;
+    float hc_vel_dt;
+    float hc_vel_derivative;
+    float hc_vel_integrator;
+
     // Angle limit time constant (to maintain altitude)
     AP_Float            _angle_limit_tc;
 
@@ -388,6 +432,10 @@ protected:
 
     // throttle provided as input to attitude controller.  This does not include angle boost.
     float               _throttle_in = 0.0f;
+    
+    float               _asv_yaw_pid_error;
+    float               _asv_yaw_pid_force;
+    float               _asv_yaw_error;
 
     // This represents the throttle increase applied for tilt compensation.
     // Used only for logging.

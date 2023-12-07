@@ -116,6 +116,33 @@ void Sub::Log_Write_Data(uint8_t id, int16_t value)
     }
 }
 
+
+// struct PACKED log_ASV_ROBUST{
+//     LOG_PACKET_HEADER;
+//     uint64_t time_us;
+//     float ASV_robust_yaw_force;
+//     float ASV_robust_x_force;
+//     float ASV_robust_y_force;
+//     float ASV_robust_yaw_error;
+//     float ASV_robust_x_error;
+//     float ASV_robust_y_error;
+// };
+
+// void Sub::Log_write_ASV(){
+//     struct log_ASV_ROBUST pkt_asv = {
+//         LOG_PACKET_HEADER_INIT(LOG_ASV_MSG),
+//         time_us : AP_HAL::micros64(),
+//         ASV_robust_yaw_force : asv_yaw_robust_force,
+//         ASV_robust_x_force : asv_x_robust_force,
+//         ASV_robust_y_force : asv_y_robust_force,
+//         ASV_robust_yaw_error : asv_yaw_robust_error_rad,
+//         ASV_robust_x_error : asv_x_robust_error,
+//         ASV_robust_y_error : asv_y_robust_error
+//     };
+//     logger.WirteBlock(&pkt_asv,sizeof(pkt_asv));
+// }
+
+
 struct PACKED log_Data_UInt16t {
     LOG_PACKET_HEADER;
     uint64_t time_us;
@@ -157,6 +184,51 @@ void Sub::Log_Write_Data(uint8_t id, int32_t value)
         };
         logger.WriteCriticalBlock(&pkt, sizeof(pkt));
     }
+}
+
+// struct PACKED log_PID
+// {
+//     LOG_PACK
+// }
+
+struct PACKED log_ASV_Robust
+{
+    /* data */
+    LOG_PACKET_HEADER; //日志包头
+    uint64_t time_us;  //数据项
+    float ASV_X_force_ROBUST;
+    float ASV_Y_force_ROBUST;
+    float ASV_YAW_force_ROBUST;
+    float ASV_X_error_ROBUST;
+    float ASV_Y_error_ROBUST;
+    float ASV_YAW_error_ROBUST;
+    float ASV_X_current_ROBUST;
+    float ASV_Y_current_ROBUST;
+    float ASV_YAW_current_ROBUST;
+    float ASV_X_target_ROBUST;
+    float ASV_Y_target_ROBUST;
+    float ASV_YAW_target_ROBUST;
+};
+
+void Sub::Log_write_ASV_Robust()
+{
+    struct log_ASV_Robust pkt_asv_robust = {
+        LOG_PACKET_HEADER_INIT(LOG_ASV_ROBUST_MSG),
+        time_us : AP_HAL::micros64(),
+        ASV_X_force_ROBUST : asv_x_robust_force,
+        ASV_Y_force_ROBUST : asv_y_robust_force,
+        ASV_YAW_force_ROBUST : asv_yaw_robust_force,
+        ASV_X_error_ROBUST : asv_x_robust_error_b,
+        ASV_Y_error_ROBUST : asv_y_robust_error_b,
+        ASV_YAW_error_ROBUST : asv_yaw_robust_error_rad,
+        ASV_X_current_ROBUST : inertial_nav.get_position().x/100,
+        ASV_Y_current_ROBUST : inertial_nav.get_position().y/100,
+        ASV_YAW_current_ROBUST : radians(AP::gps().yaw()),
+        ASV_X_target_ROBUST : pos_control.get_pos_target_x()/100,
+        ASV_Y_target_ROBUST : pos_control.get_pos_target_y()/100,
+        ASV_YAW_target_ROBUST : asv_get_yaw()/100,
+    };
+    logger.WriteBlock(&pkt_asv_robust, sizeof(pkt_asv_robust));
 }
 
 struct PACKED log_Data_UInt32t {
@@ -264,8 +336,12 @@ const struct LogStructure Sub::log_structure[] = {
       "D32",   "QBi",         "TimeUS,Id,Value", "s--", "F--" },
     { LOG_DATA_UINT32_MSG, sizeof(log_Data_UInt32t),         
       "DU32",  "QBI",         "TimeUS,Id,Value", "s--", "F--" },
+    // { LOG_ASV_MSG, sizeof(log_ASV_ROBUST),
+    //  "HC_ANGLE", "Qff", "TimeUS,Value,Value", "s--", "F--"},
     { LOG_DATA_FLOAT_MSG, sizeof(log_Data_Float),         
       "DFLT",  "QBf",         "TimeUS,Id,Value", "s--", "F--" },
+    { LOG_ASV_ROBUST_MSG, sizeof(log_ASV_Robust),
+      "ASV_ROBSUST", "Qffffffffffff", "TimeUS, xF, yF, yawF, xErr, yErr, yawErr, xCur, yCur, yawCur, xTar, yTar, yawTar", "s------------", "F000000000000"},
     { LOG_GUIDEDTARGET_MSG, sizeof(log_GuidedTarget),
       "GUID",  "QBffffff",    "TimeUS,Type,pX,pY,pZ,vX,vY,vZ", "s-mmmnnn", "F-000000" },
 };

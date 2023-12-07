@@ -78,18 +78,44 @@ MAV_STATE GCS_MAVLINK_Sub::system_status() const
 
 void GCS_MAVLINK_Sub::send_nav_controller_output() const
 {
-    const Vector3f &targets = sub.attitude_control.get_att_target_euler_cd();
+//    const Vector3f &targets = sub.attitude_control.get_att_target_euler_cd();
     mavlink_msg_nav_controller_output_send(
         chan,
-        targets.x * 1.0e-2f,
-        targets.y * 1.0e-2f,
-        targets.z * 1.0e-2f,
-        sub.wp_nav.get_wp_bearing_to_destination() * 1.0e-2f,
-        MIN(sub.wp_nav.get_wp_distance_to_destination() * 1.0e-2f, UINT16_MAX),
-        sub.pos_control.get_alt_error() * 1.0e-2f,
-        0,
+        sub.pos_control.get_vel_target_x(),
+        sub.pos_control.get_vel_target_y(),
+        sub.wp_nav.get_track_desired(),
+        sub.wp_nav.get_track_length(),
+        MIN(sub.wp_nav.get_wp_distance_to_destination(), UINT16_MAX),
+        -sub.wp_nav.get_pitch(),
+        sub.wp_nav.get_roll(),
         0);
+
 }
+
+void GCS_MAVLINK_Sub::send_rasp_control_data() const
+{
+    const AP_AHRS &ahrs = AP::ahrs();
+    const Vector3f omega = ahrs.get_gyro();
+	Vector3f local_position, velocity;
+    if (!ahrs.get_relative_position_NED_home(local_position) ||
+        !ahrs.get_velocity_NED(velocity)) {
+        // we don't know the position and velocity
+    }
+    mavlink_msg_rasp_control_data_send(
+        chan,
+        sub.g.heading_control,
+        sub.asv_get_yaw(),
+        sub.wp_nav.get_destination_x(),
+        sub.wp_nav.get_destination_y(),
+        ahrs.yaw,
+        omega.z,
+        local_position.x,
+        local_position.y,
+        velocity.x,
+        velocity.y);
+}
+
+
 
 int16_t GCS_MAVLINK_Sub::vfr_hud_throttle() const
 {
@@ -105,8 +131,8 @@ void GCS_MAVLINK_Sub::send_scaled_pressure3()
     mavlink_msg_scaled_pressure3_send(
         chan,
         AP_HAL::millis(),
-        0,
-        0,
+        -sub.wp_nav.get_track_desired(),
+        sub.wp_nav.get_track_length(),
         sub.celsius.temperature() * 100);
 }
 
@@ -322,6 +348,7 @@ static const ap_message STREAM_RAW_SENSORS_msgs[] = {
     MSG_SCALED_PRESSURE,
     MSG_SCALED_PRESSURE2,
     MSG_SCALED_PRESSURE3,
+    MSG_RASP_CONTROL_DATA,
     MSG_SENSOR_OFFSETS
 };
 static const ap_message STREAM_EXTENDED_STATUS_msgs[] = {
@@ -334,6 +361,7 @@ static const ap_message STREAM_EXTENDED_STATUS_msgs[] = {
     MSG_GPS2_RAW,
     MSG_GPS2_RTK,
     MSG_NAV_CONTROLLER_OUTPUT,
+    MSG_RASP_CONTROL_DATA,
     MSG_FENCE_STATUS,
     MSG_NAMED_FLOAT
 };

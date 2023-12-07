@@ -36,6 +36,8 @@
 #define UBLOX_FAKE_3DLOCK 0
 #define CONFIGURE_PPS_PIN 0
 
+#define UBLOX_MB_DEBUGGING 0
+
 extern const AP_HAL::HAL& hal;
 
 #ifdef HAL_NO_GCS
@@ -48,6 +50,19 @@ extern const AP_HAL::HAL& hal;
  # define Debug(fmt, args ...)  do {hal.console->printf("%s:%d: " fmt "\n", __FUNCTION__, __LINE__, ## args); hal.scheduler->delay(1); } while(0)
 #else
  # define Debug(fmt, args ...)
+#endif
+
+#if UBLOX_MB_DEBUGGING
+#if defined(HAL_BUILD_AP_PERIPH)
+ extern "C" {
+   void can_printf(const char *fmt, ...);
+ }
+ # define MB_Debug(fmt, args ...)  do {can_printf("%s:%d: " fmt "\n", __FUNCTION__, __LINE__, ## args);} while(0)
+#else
+ # define MB_Debug(fmt, args ...)  do {hal.console->printf("%s:%d: " fmt "\n", __FUNCTION__, __LINE__, ## args); hal.scheduler->delay(1); } while(0)
+#endif
+#else
+ # define MB_Debug(fmt, args ...)
 #endif
 
 AP_GPS_UBLOX::AP_GPS_UBLOX(AP_GPS &_gps, AP_GPS::GPS_State &_state, AP_HAL::UARTDriver *_port) :
@@ -401,7 +416,7 @@ AP_GPS_UBLOX::read(void)
 
     numc = port->available();
     for (int16_t i = 0; i < numc; i++) {        // Process bytes received
-
+        // 当i为0，
         // read the next byte
         data = port->read();
 
@@ -416,6 +431,8 @@ AP_GPS_UBLOX::read(void)
         // chances of recovering from a mismatch and makes it less
         // likely that we will be fooled by the preamble appearing
         // as data in some other message.
+        //如果我们无法匹配任何预期的字节，我们将重置状态机，并将失败的字节重新考虑为前同步码的第一个字节。
+        //这提高了我们从错误匹配中恢复的机会，并使我们不太可能被作为数据出现在其他消息中的前导所愚弄。
         //
         case 1:
             if (PREAMBLE2 == data) {
@@ -426,7 +443,7 @@ AP_GPS_UBLOX::read(void)
             Debug("reset %u", __LINE__);
             FALLTHROUGH;
         case 0:
-            if(PREAMBLE1 == data)
+            if(PREAMBLE1 == data)   //0x5b
                 _step++;
             break;
 
@@ -447,7 +464,7 @@ AP_GPS_UBLOX::read(void)
         case 3:
             _step++;
             _ck_b += (_ck_a += data);                   // checksum byte
-            _msg_id = data;
+            _msg_id = data;         
             break;
         case 4:
             _step++;
@@ -477,7 +494,7 @@ AP_GPS_UBLOX::read(void)
         //
         case 6:
             _ck_b += (_ck_a += data);                   // checksum byte
-            if (_payload_counter < sizeof(_buffer)) {
+            if (_payload_counter < sizeof(_buffer)) {   // buffer里面存的全是payload
                 _buffer[_payload_counter] = data;
             }
             if (++_payload_counter == _payload_length)
@@ -1032,7 +1049,26 @@ AP_GPS_UBLOX::_parse_gps(void)
         state.hdop = 130;
 #endif
         break;
-    case MSG_PVT:
+
+#if GPS_MOVING_BASELINE
+    case MSG_RELPOSNED:
+        {
+            _check_new_itow(_buffer.relposned.iTOW);
+            if (_buffer.relposned.iTOW != _last_relposned_itow+200) {
+                MB_Debug("RELPOSNED ITOW %u %u\n", unsigned(_buffer.relposned.iTOW), unsigned(_last_relposned_itow));
+            }
+            if(calculate_moving_base_yaw(_buffer.relposned.relPosHeading * 1e-5)){
+                _last_relposned_itow = _buffer.relposned.iTOW;
+                state.relPosHeading = _buffer.relposned.relPosHeading * 1e-5;
+                state.relPosLength  = _buffer.relposned.relPosLength * 0.01;
+                state.relPosD       = _buffer.relposned.relPosD * 0.01;
+                state.accHeading    = _buffer.relposned.accHeading * 1e-5;                    state.relposheading_ts = AP_HAL::millis();
+            }
+        }
+        break;
+#endif // GPS_MOVING_BASELINE
+
+    case MSG_PVT:               //switch (_msg_id)
         Debug("MSG_PVT");
         havePvtMsg = true;
         // position

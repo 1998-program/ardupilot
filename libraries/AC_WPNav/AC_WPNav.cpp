@@ -173,6 +173,21 @@ bool AC_WPNav::set_wp_destination(const Location& destination)
     return set_wp_destination(dest_neu, terr_alt);
 }
 
+Vector3f AC_WPNav::asv_yaw_destination_trans(const Location& destination)
+{
+	bool terr_alt;
+    Vector3f dest_neu;
+
+    // convert destination location to vector
+	get_vector_NEU(destination, dest_neu, terr_alt);
+        
+   
+
+    // set target as vector from EKF origin
+    return dest_neu;
+}
+
+
 bool AC_WPNav::get_wp_destination(Location& destination) const
 {
     Vector3f dest = get_wp_destination();
@@ -312,6 +327,24 @@ void AC_WPNav::get_wp_stopping_point(Vector3f& stopping_point) const
     _pos_control.get_stopping_point_z(stopping_point);
 }
 
+
+void AC_WPNav::asv_wp_target_along_track()
+{
+	float distance;
+	distance = get_wp_distance_to_destination();
+	if( !_flags.reached_destination ) {
+        if( distance <= 40 ) {
+            // "fast" waypoints are complete once the intermediate point reaches the destination
+            if (_flags.fast_waypoint) {
+                _flags.reached_destination = true;
+            }
+            
+        }
+    }
+	_pos_control.set_pos_target(_destination);
+}
+
+
 /// advance_wp_target_along_track - move target location along track from origin to destination
 bool AC_WPNav::advance_wp_target_along_track(float dt)
 {
@@ -434,6 +467,7 @@ bool AC_WPNav::advance_wp_target_along_track(float dt)
     _pos_control.set_pos_target(final_target);
 
     // check if we've reached the waypoint
+    /*
     if( !_flags.reached_destination ) {
         if( _track_desired >= _track_length ) {
             // "fast" waypoints are complete once the intermediate point reaches the destination
@@ -448,6 +482,18 @@ bool AC_WPNav::advance_wp_target_along_track(float dt)
             }
         }
     }
+	*/
+	float distance;
+	distance = get_wp_distance_to_destination();
+	if( !_flags.reached_destination ){
+		if( distance <= 50 ){
+ 			if (_flags.fast_waypoint) {
+                	_flags.reached_destination = true;
+            }
+		}
+	}
+
+	
 
     // update the target yaw if origin and destination are at least 2m apart horizontally
     if (_track_length_xy >= WPNAV_YAW_DIST_MIN) {
@@ -465,6 +511,12 @@ bool AC_WPNav::advance_wp_target_along_track(float dt)
 
     // successfully advanced along track
     return true;
+}
+
+void AC_WPNav::return_error()
+{
+    _asv_x_error = _pos_control.get_rb_error_x();
+    _asv_y_error = _pos_control.get_rb_error_y(); 
 }
 
 /// get_wp_distance_to_destination - get horizontal distance to destination in cm
@@ -513,6 +565,40 @@ bool AC_WPNav::update_wpnav()
 
     return ret;
 }
+
+bool AC_WPNav::asv_update_wpnav()
+{
+    bool ret = true;
+
+    // get dt from pos controller
+//    float dt = _pos_control.get_dt();
+
+    // allow the accel and speed values to be set without changing
+    // out of auto mode. This makes it easier to tune auto flight
+    _pos_control.set_max_accel_xy(_wp_accel_cmss);//_wp_accel_cmss is max
+    _pos_control.set_max_accel_z(_wp_accel_z_cmss);
+
+    // advance the target if necessary
+//    if (!advance_wp_target_along_track(dt)) {
+        // To-Do: handle inability to advance along track (probably because of missing terrain data)
+//        ret = false;
+//    }
+	asv_wp_target_along_track();
+
+    // freeze feedforwards during known discontinuities
+  //  if (_flags.new_wp_destination) {
+  //      _flags.new_wp_destination = false;
+  //      _pos_control.freeze_ff_z();
+  //  }
+
+    //_pos_control.update_xy_controller();
+    check_wp_leash_length();
+
+    _wp_last_update = AP_HAL::millis();
+
+    return ret;
+}
+
 
 // check_wp_leash_length - check if waypoint leash lengths need to be recalculated
 //  should be called after _pos_control.update_xy_controller which may have changed the position controller leash lengths

@@ -147,6 +147,23 @@ void Sub::translate_wpnav_rp(float &lateral_out, float &forward_out)
     forward_out = (float)forward/(float)aparm.angle_max;
 }
 
+void Sub::asv_translate_wpnav_rp(float &lateral_out, float &forward_out)
+{
+    // get roll and pitch targets in centidegrees
+    int32_t lateral = pos_control.get_lateral();
+    int32_t forward = pos_control.get_forward(); // output is reversed
+
+    // constrain target forward/lateral values
+    // The outputs of wp_nav.get_roll and get_pitch should already be constrained to these values
+    lateral = constrain_int16(lateral, -wp_nav.get_accel_max(), wp_nav.get_accel_max());
+    forward = constrain_int16(forward, -wp_nav.get_accel_max(), wp_nav.get_accel_max());
+
+    // Normalize
+    lateral_out = (float)lateral/(float)wp_nav.get_accel_max();
+    forward_out = (float)forward/(float)wp_nav.get_accel_max();
+}
+
+
 // translate wpnav roll/pitch outputs to lateral/forward
 void Sub::translate_circle_nav_rp(float &lateral_out, float &forward_out)
 {

@@ -54,7 +54,7 @@ class AP_Scheduler
 {
 public:
 
-    FUNCTOR_TYPEDEF(scheduler_fastloop_fn_t, void);
+    FUNCTOR_TYPEDEF(scheduler_fastloop_fn_t, void);     //scheduler_fastloop_fn_t代表了Factor类的一个对象，该对象参数为void
 
     AP_Scheduler(scheduler_fastloop_fn_t fastloop_fn = nullptr);
 
@@ -153,6 +153,7 @@ public:
 private:
     // function that is called before anything in the scheduler table:
     scheduler_fastloop_fn_t _fastloop_fn;
+    //定义一个函数类对象，这个对象带一个返回值为void的类型参数，并且这个scheduler_fastloop_fn_t对象具有Functor模板的功能。
 
     // used to enable scheduler debugging
     AP_Int8 _debug;

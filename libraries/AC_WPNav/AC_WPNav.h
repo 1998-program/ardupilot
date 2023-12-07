@@ -72,6 +72,8 @@ public:
     /// set current target climb or descent rate during wp navigation
     void set_speed_up(float speed_up_cms);
     void set_speed_down(float speed_down_cms);
+	float get_destination_x()    { return _destination.x; }
+	float get_destination_y()    { return _destination.y; }
 
     /// get default target horizontal velocity during wp navigation
     float get_default_speed_xy() const { return _wp_speed_cms; }
@@ -97,6 +99,10 @@ public:
     /// true if origin.z and destination.z are alt-above-terrain, false if alt-above-ekf-origin
     bool origin_and_destination_are_terrain_alt() const { return _terrain_alt; }
 
+	float get_roll() const { return _pos_control.get_roll(); }
+    float get_pitch() const { return _pos_control.get_pitch(); }
+	float get_track_length() const { return _track_length; }
+	float get_track_desired() const { return _track_desired; }
     /// set_wp_destination waypoint using location class
     ///     returns false if conversion from location to vector from ekf origin cannot be calculated
     bool set_wp_destination(const Location& destination);
@@ -151,6 +157,7 @@ public:
 
     /// update_wpnav - run the wp controller - should be called at 100hz or higher
     virtual bool update_wpnav();
+	virtual bool asv_update_wpnav();
 
     // check_wp_leash_length - check recalc_wp_leash flag and calls calculate_wp_leash_length() if necessary
     //  should be called after _pos_control.update_xy_controller which may have changed the position controller leash lengths
@@ -212,17 +219,28 @@ public:
     ///
 
     /// get desired roll, pitch which should be fed into stabilize controllers
-    float get_roll() const { return _pos_control.get_roll(); }
-    float get_pitch() const { return _pos_control.get_pitch(); }
+    float get_roll()   { return _pos_control.get_roll(); }
+    float get_pitch()    { return _pos_control.get_pitch(); }
+    Vector3f get_destination() {return _destination;}
+	
+	float get_accel_max() const { return _wp_accel_cmss; }
+//	float get_lateral() const { return _wp_accel_cmss; }
 
     /// advance_wp_target_along_track - move target location along track from origin to destination
     bool advance_wp_target_along_track(float dt);
+	void asv_wp_target_along_track();
 
     /// return the crosstrack_error - horizontal error of the actual position vs the desired position
     float crosstrack_error() const { return _track_error_xy;}
 
-    static const struct AP_Param::GroupInfo var_info[];
+	Vector3f asv_yaw_destination_trans(const Location& destination);
 
+    static const struct AP_Param::GroupInfo var_info[];
+    void return_error();
+    float   _asv_x_error;
+    float   _asv_y_error;
+    float get_x_error() { return _asv_x_error;}
+    float get_y_error() { return _asv_y_error;}
 protected:
 
     // segment types, either straight or spine
@@ -271,6 +289,7 @@ protected:
     // set heading used for spline and waypoint navigation
     void set_yaw_cd(float heading_cd);
 
+   
     // references and pointers to external libraries
     const AP_InertialNav&   _inav;
     const AP_AHRS_View&     _ahrs;
@@ -316,4 +335,6 @@ protected:
     AP_Int8     _rangefinder_use;
     bool        _rangefinder_healthy;
     float       _rangefinder_alt_cm;
+    
+
 };

@@ -74,3 +74,6 @@ private:
 namespace AP {
     AP_InternalError &internalerror();
 };
+
+#define INTERNAL_ERROR(error_number) \
+    AP::internalerror().error(error_number, __LINE__);

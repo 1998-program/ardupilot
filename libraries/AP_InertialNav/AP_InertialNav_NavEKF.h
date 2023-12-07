@@ -35,6 +35,8 @@ public:
      */
     const Vector3f&    get_position() const override;
 
+    const float&       get_gpsyaw(void) const; 
+
     /**
      * get_velocity - returns the current velocity in cm/s
      *
@@ -71,4 +73,5 @@ private:
     Vector3f _relpos_cm;   // NEU
     Vector3f _velocity_cm; // NEU
     AP_AHRS_NavEKF &_ahrs_ekf;
+    float _gps_yaw;
 };

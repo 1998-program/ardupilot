@@ -23,14 +23,16 @@
     typedef Functor<rettype, ## __VA_ARGS__> name
 
 #define FUNCTOR_DECLARE(name, rettype, ...) \
-    Functor<rettype, ## __VA_ARGS__> name
+    Functor<rettype, ## __VA_ARGS__> name       //定义一个名叫name的Functor对象
 
 #define FUNCTOR_BIND(obj, func, rettype, ...) \
     Functor<rettype, ## __VA_ARGS__>::bind<std::remove_reference<decltype(*obj)>::type, func>(obj)
 
 #define FUNCTOR_BIND_MEMBER(func, rettype, ...) \
     Functor<rettype, ## __VA_ARGS__>::bind<std::remove_reference<decltype(*this)>::type, func>(this)
-
+    //std::remove_reference其功能为去除类型中的引用。
+    //Functor::bind(obj)，调用的类Functor里面的bind静态函数。
+    //decltype获得变量的类型
 template <class RetType, class... Args>
 class Functor
 {

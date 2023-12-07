@@ -181,7 +181,7 @@ public:
 
 private:
     const enum Rotation rotation;
-    AP_AHRS &ahrs;
+    AP_AHRS &ahrs;  //抽象类是无法建立对象、但可以定义指针、该指针可以指向它的派生类,进而实现多态性，也可以通过引用。
 
     // body frame rotation for this View
     Matrix3f rot_view;

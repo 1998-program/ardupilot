@@ -40,6 +40,8 @@ void RCInput::init()
     AP::RC().init();
 #endif
 
+//这里两个宏定义，是用来选择执行FMU或者IO的过程
+
 #if HAL_USE_ICU == TRUE
     //attach timer channel on which the signal will be received
     sig_reader.attach_capture_timer(&RCIN_ICU_TIMER, RCIN_ICU_CHANNEL, STM32_RCIN_DMA_STREAM, STM32_RCIN_DMA_CHANNEL);

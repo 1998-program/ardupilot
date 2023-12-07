@@ -191,6 +191,12 @@ void Sub::handle_jsbutton_press(uint8_t button, bool shift, bool held)
     case JSButton::button_function_t::k_mode_poshold:
         set_mode(POSHOLD, MODE_REASON_TX_COMMAND);
         break;
+	case JSButton::button_function_t::k_mode_yaw:
+        set_mode(YAW, MODE_REASON_TX_COMMAND);
+        break;
+	case JSButton::button_function_t::k_mode_circle2:
+        set_mode(CIRCLE2, MODE_REASON_TX_COMMAND);
+        break;
 
     case JSButton::button_function_t::k_mount_center:
 #if MOUNT == ENABLED

@@ -187,7 +187,7 @@ void AP_IOMCU_FW::init()
     }
 }
 
-
+//运行协处理器的更新函数
 void AP_IOMCU_FW::update()
 {
     // we are not running any other threads, so we can use an

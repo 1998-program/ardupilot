@@ -173,11 +173,13 @@ public:
     bool send_battery_status() const;
     void send_distance_sensor() const;
     // send_rangefinder sends only if a downward-facing instance is
-    // found.  Rover overrides this!
+    // found.  Rover overrides this!send_rasp_control_data
     virtual void send_rangefinder() const;
     void send_proximity() const;
     virtual void send_nav_controller_output() const = 0;
+    virtual void send_rasp_control_data() const = 0;
     virtual void send_pid_tuning() = 0;
+//    void send_rasp_control_data() const;
     void send_ahrs2();
     void send_ahrs3();
     void send_system_time();
@@ -796,7 +798,7 @@ protected:
 
     GCS_MAVLINK_Parameters chan_parameters[MAVLINK_COMM_NUM_BUFFERS];
     uint8_t _num_gcs;
-    GCS_MAVLINK *_chan[MAVLINK_COMM_NUM_BUFFERS];
+    GCS_MAVLINK *_chan[MAVLINK_COMM_NUM_BUFFERS];       //mavlink最多由5个接口
 
 private:
 

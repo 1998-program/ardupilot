@@ -27,9 +27,9 @@
 const AP_Scheduler::Task Sub::scheduler_tasks[] = {
     SCHED_TASK(fifty_hz_loop,         50,     75),
     SCHED_TASK(update_GPS,            50,    200),
-#if OPTFLOW == ENABLED
-    SCHED_TASK_CLASS(OpticalFlow,          &sub.optflow,             update,         200, 160),
-#endif
+//#if OPTFLOW == ENABLED
+    //SCHED_TASK_CLASS(OpticalFlow,          &sub.optflow,             update,         200, 160),
+//#endif
     SCHED_TASK(update_batt_compass,   10,    120),
     SCHED_TASK(read_rangefinder,      20,    100),
     SCHED_TASK(update_altitude,       10,    100),
@@ -88,6 +88,9 @@ void Sub::setup()
 
     // initialise the main loop scheduler
     scheduler.init(&scheduler_tasks[0], ARRAY_SIZE(scheduler_tasks), MASK_LOG_PM);
+    // 通过scheduler_task[0]传入数组任务表数组表总共有58个需要执行的任务：
+    // 可以通过设置ENABLE、DISABLED进行启动或者禁用任务有三组参数需要注意
+    // 设置fastloop为400hz运行
 }
 
 void Sub::loop()
@@ -103,15 +106,19 @@ void Sub::fast_loop()
     // update INS immediately to get current gyro data populated
     ins.update();
 
+    receive_from_rasp();
+
     //don't run rate controller in manual or motordetection modes
-    if (control_mode != MANUAL && control_mode != MOTOR_DETECT) {
-        // run low level rate controllers that only require IMU data
-        attitude_control.rate_controller_run();
-    }
+    // if (control_mode != MANUAL && control_mode != MOTOR_DETECT) {
+    // //     // run low level rate controllers that only require IMU data
+    //     attitude_control.asv_pid_yaw_controller_run();
+    // }
 
     // send outputs to the motors library
+    if (frequency_divider == 1){
     motors_output();
 
+    }
     // run EKF state estimator (expensive)
     // --------------------
     read_AHRS();
@@ -124,8 +131,11 @@ void Sub::fast_loop()
     check_ekf_yaw_reset();
 
     // run the attitude controllers
+    if (frequency_divider == 1){
     update_flight_mode();
-
+    frequency_divider = 0;
+    }
+    else frequency_divider++;
     // update home from EKF if necessary
     update_home_from_EKF();
 
@@ -154,6 +164,10 @@ void Sub::fifty_hz_loop()
     failsafe_ekf_check();
 
     failsafe_sensors_check();
+
+    if(should_log(MASK_LOG_RCIN)){
+        Log_write_ASV_Robust();
+    }
 
     // Update rc input/output
     rc().read_input();
@@ -348,4 +362,4 @@ bool Sub::control_check_barometer()
     return true;
 }
 
-AP_HAL_MAIN_CALLBACKS(&sub);
+AP_HAL_MAIN_CALLBACKS(&sub);            //调用入口宏main函数启动应用

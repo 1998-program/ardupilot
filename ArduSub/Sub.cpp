@@ -18,8 +18,8 @@
 #include "version.h"
 #undef FORCE_VERSION_H_INCLUDE
 
-const AP_HAL::HAL& hal = AP_HAL::get_HAL();
-
+const AP_HAL::HAL& hal = AP_HAL::get_HAL();     //获取具体的系统硬件平台实例，比如在board pixhawk1+ChibiOS系统硬件平台上运行
+                    // = return hal_chibios;
 /*
   constructor for main Sub class
  */
@@ -50,4 +50,4 @@ Sub::Sub()
 #endif
 }
 
-Sub sub;
+Sub sub;        //实例化一个sub

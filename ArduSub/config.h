@@ -270,3 +270,7 @@
 #ifndef AC_TERRAIN
 #define AC_TERRAIN DISABLED // Requires Rally enabled as well
 #endif
+
+#ifndef HEADING_CONTROL
+#define HEADING_CONTROL 	145  //heading
+#endif
